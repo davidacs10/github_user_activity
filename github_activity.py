@@ -12,18 +12,27 @@ response = requests.get(url)
 
 if response.status_code == 200:
     data = response.json()
+    push_counts = {}
+    messages = []
+    for event in data:
+        repo_name = event["repo"].get("name")
+        if event["type"] == "PushEvent":
+            push_counts[repo_name] = push_counts.get(repo_name, 0) + 1
+    for k, v in push_counts.items():
+        messages.append(f"Pushed {v} commits to {k}")
     for event in data:
         repo_name = event["repo"].get("name")
         action = event["payload"].get("action", "unknown")
         ref_type = event["payload"].get("ref_type", "unknown")
-        if event["type"] == "PushEvent":
-            print(f"Pushed commits to {repo_name}")
-        elif event["type"] == "CreateEvent":
-            print(f"Create a new {ref_type} in {repo_name}")
+        if event["type"] == "CreateEvent":
+            messages.append(f"Create a new {ref_type} in {repo_name}")
         elif event["type"] == "WatchEvent":
-            print(f"Starred {repo_name}")
+            messages.append(f"Starred {repo_name}")
         elif event["type"] == "IssuesEvent":
-            print(f"Issue {action} in {repo_name}")
+            messages.append(f"Issue {action} in {repo_name}")
+    for message in messages:
+        print(message)
+
 elif response.status_code == 404:
     print(f"El usuario: {user} no existe.")
 else:
